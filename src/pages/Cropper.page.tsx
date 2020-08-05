@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import { Animated, PanResponder, PanResponderInstance, PanResponderGestureState, ImageCropData } from 'react-native';
-// @ts-ignore; 'react-native-image-rotate' does not have typescript support
-import RNImageRotate from 'react-native-image-rotate';
-import ImageEditor from '@react-native-community/image-editor';
+import * as ImageManipulator from "expo-image-manipulator";
 import { Q } from '../components/Cropper/Cropper.constants';
 import Cropper from '../components/Cropper/Cropper.component';
 import { getCropperLimits } from '../utils';
@@ -685,24 +683,17 @@ class CropperPage extends Component<CropperPageProps, State> {
       size: { width, height },
       resizeMode: 'stretch',
     } as ImageCropData;
-    RNImageRotate.rotateImage(
-      this.props.imageUri,
-      this.state.rotation,
-      (rotatedUri: string) => {
-        //
-        ImageEditor.cropImage(rotatedUri, cropData)
-          .then(croppedUri => {
-            this.props.onDone(croppedUri);
-          })
-          .catch((err: Error) => {
-            this.props.onError(err);
-          });
-        //
-      },
-      (err: Error) => {
-        this.props.onError(err);
-      },
-    );
+    ImageManipulator.manipulateAsync(this.props.imageUri, [{ crop: { originX: x, originY: y, width: width, height: height } }], {
+      compress: 1,
+      format: ImageManipulator.SaveFormat.PNG,
+      base64: false,
+    })
+      .then(value => {
+        this.props.onDone(value.uri);
+      })
+      .catch(reason => {
+        this.props.onError(reason);
+      });
   };
 
   render() {
